@@ -166,11 +166,17 @@ export default class RNCallKeep {
 
   }
 
-  static setCurrentCallActive() {
+  static setCurrentCallActive(uuid: string) {
 
   }
 
   static backToForeground() {
 
+  }
+  /**
+     * @description answerIncomingCall method is available only on Android.
+  */
+  static answerIncomingCall(uuid: string) {
+    
   }
 }
