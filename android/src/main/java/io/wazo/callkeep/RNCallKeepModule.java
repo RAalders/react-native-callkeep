@@ -26,28 +26,24 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
+
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import android.telecom.CallAudioState;
 import android.telecom.Connection;
-import android.telecom.DisconnectCause;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.facebook.react.ReactActivity;
 import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.Dynamic;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -56,19 +52,15 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter;
+import com.facebook.react.modules.core.PermissionListener;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ResourceBundle;
-
-import static android.support.v4.app.ActivityCompat.requestPermissions;
 
 // @see https://github.com/kbagchiGWC/voice-quickstart-android/blob/9a2aff7fbe0d0a5ae9457b48e9ad408740dfb968/exampleConnectionService/src/main/java/com/twilio/voice/examples/connectionservice/VoiceConnectionServiceActivity.java
-public class RNCallKeepModule extends ReactContextBaseJavaModule {
+public class RNCallKeepModule extends ReactContextBaseJavaModule implements PermissionListener {
     public static final int REQUEST_READ_PHONE_STATE = 1337;
     public static final int REQUEST_REGISTER_CALL_PROVIDER = 394859;
 
@@ -235,7 +227,7 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
         hasPhoneAccountPromise = promise;
 
         if (!this.hasPermissions()) {
-            requestPermissions(currentActivity, allPermissions, REQUEST_READ_PHONE_STATE);
+            ((ReactActivity)currentActivity).requestPermissions(allPermissions, REQUEST_READ_PHONE_STATE, this);
              return;
         }
 
@@ -503,17 +495,18 @@ public class RNCallKeepModule extends ReactContextBaseJavaModule {
         return this.reactContext.getApplicationContext();
     }
 
-    public static void onRequestPermissionsResult(int requestCode, String[] grantedPermissions, int[] grantResults) {
+    public boolean onRequestPermissionsResult(int requestCode, String[] grantedPermissions, int[] grantResults) {
         int permissionsIndex = 0;
         List<String> permsList = Arrays.asList(permissions);
         for (int result : grantResults) {
             if (permsList.contains(grantedPermissions[permissionsIndex]) && result != PackageManager.PERMISSION_GRANTED) {
                 hasPhoneAccountPromise.resolve(false);
-                return;
+                return true;
             }
             permissionsIndex++;
         }
         hasPhoneAccountPromise.resolve(true);
+        return true;
     }
 
     private class VoiceBroadcastReceiver extends BroadcastReceiver {
